@@ -20,8 +20,6 @@ def degrees_to_decimal(data, hemisphere):
         decimalPointPosition = data.index('.')
         degrees = float(data[:decimalPointPosition-2])
         minutes = float(data[decimalPointPosition-2:])/60
-        print "degrees: " + str(degrees)
-        print "minutes: " + str(minutes)
         output = degrees + minutes
         if hemisphere is 'N' or hemisphere is 'E':
             return output
