@@ -1,7 +1,8 @@
 import serial
 import os
-from Adafruit_IO import Client
-import credentials
+
+firstFixFlag = False
+firstFixDate = ""
 
 ser = serial.Serial(
     port='/dev/ttyUSB0',\
@@ -12,8 +13,6 @@ ser = serial.Serial(
         timeout=1)
 
 print("connected to: " + ser.portstr)
-
-aio = Client(credentials.ADAFRUIT_IO_KEY)
 
 def degrees_to_decimal(data, hemisphere):
     try:
@@ -53,15 +52,14 @@ while True:
     if "$GPRMC" in line:
         gpsData = parse_GPRMC(line)
         if gpsData['validity'] == "A":
-            #os.system('clear')
-            #print "Lat: " + gpsData['latitude']+gpsData['latitude_hemisphere']
-            #print "Long: " + gpsData['longitude']+gpsData['longitude_hemisphere']
-            with open("/home/pi/gps_experimentation/log.txt", "a") as myfile:
-                myfile.write(gpsData['fix_date'] + "," + gpsData['fix_time'] + "," + gpsData['latitude'] + "," + gpsData['latitude_hemisphere'] + "," + gpsData['longitude'] + "," + gpsData['longitude_hemisphere'] +"\n")
-            with open("/home/pi/gps_experimentation/raw_log.txt", "a") as myfile:
-                myfile.write(line)
-            payload = {'lat': gpsData['decimal_latitude'],
-                        'long': gpsData['decimal_longitude']
-            }
-            aio.send(payload)
+            if firstFixFlag is False:
+                firstFixDate = gpsData['fix_date']
+                with open("/home/pi/gps_experimentation/" + firstFixDate +"-simple-log.txt", "a") as myfile:
+                    myfile.write("fix_date,fix_time,lat,lon\n")
+                firstFixFlag = True
+            else:
+                with open("/home/pi/gps_experimentation/" + firstFixDate +"-simple-log.txt", "a") as myfile:
+                    myfile.write(gpsData['fix_date'] + "," + gpsData['fix_time'] + "," + gpsData['decimal_latitude'] + "," + gpsData['decimal_longitude'] +"\n")
+                with open("/home/pi/gps_experimentation/" + firstFixDate +"-gprmc-raw-log.txt", "a") as myfile:
+                    myfile.write(line)
 
