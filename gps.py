@@ -1,9 +1,10 @@
 import serial
 import os
 
-firstFixFlag = False
+firstFixFlag = False # this will go true after the first GPS fix.
 firstFixDate = ""
 
+# Set up serial:
 ser = serial.Serial(
     port='/dev/ttyUSB0',\
     baudrate=4800,\
@@ -12,8 +13,7 @@ ser = serial.Serial(
     bytesize=serial.EIGHTBITS,\
         timeout=1)
 
-print("connected to: " + ser.portstr)
-
+# Helper function to take HHMM.SS, Hemisphere and make it decimal:
 def degrees_to_decimal(data, hemisphere):
     try:
         decimalPointPosition = data.index('.')
@@ -27,6 +27,8 @@ def degrees_to_decimal(data, hemisphere):
     except:
         return ""
 
+# Helper function to take a $GPRMC sentence, and turn it into a Python dictionary.
+# This also calls degrees_to_decimal and stores the decimal values as well.
 def parse_GPRMC(data):
     data = data.split(',')
     dict = {
@@ -47,19 +49,18 @@ def parse_GPRMC(data):
     dict['decimal_longitude'] = degrees_to_decimal(dict['longitude'], dict['longitude_hemisphere'])
     return dict
 
+# Main program loop:
 while True:
     line = ser.readline()
-    if "$GPRMC" in line:
-        gpsData = parse_GPRMC(line)
-        if gpsData['validity'] == "A":
-            if firstFixFlag is False:
-                firstFixDate = gpsData['fix_date']
-                with open("/home/pi/gps_experimentation/" + firstFixDate +"-simple-log.txt", "a") as myfile:
-                    myfile.write("fix_date,fix_time,lat,lon\n")
+    if "$GPRMC" in line: # This will exclude other NMEA sentences the GPS unit provides.
+        gpsData = parse_GPRMC(line) # Turn a GPRMC sentence into a Python dictionary called gpsData
+        if gpsData['validity'] == "A": # If the sentence shows that there's a fix, then we can log the line
+            if firstFixFlag is False: # If we haven't found a fix before, then set the filename prefix with GPS date & time.
+                firstFixDate = gpsData['fix_date'] + "-" gpsData['fix_time']
                 firstFixFlag = True
-            else:
+            else: # write the data to a simple log file and then the raw data as well:
                 with open("/home/pi/gps_experimentation/" + firstFixDate +"-simple-log.txt", "a") as myfile:
-                    myfile.write(gpsData['fix_date'] + "," + gpsData['fix_time'] + "," + gpsData['decimal_latitude'] + "," + gpsData['decimal_longitude'] +"\n")
+                    myfile.write(gpsData['fix_date'] + "," + gpsData['fix_time'] + "," + str(gpsData['decimal_latitude']) + "," + str(gpsData['decimal_longitude']) +"\n")
                 with open("/home/pi/gps_experimentation/" + firstFixDate +"-gprmc-raw-log.txt", "a") as myfile:
                     myfile.write(line)
 
