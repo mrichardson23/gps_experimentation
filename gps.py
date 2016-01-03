@@ -56,7 +56,7 @@ while True:
         gpsData = parse_GPRMC(line) # Turn a GPRMC sentence into a Python dictionary called gpsData
         if gpsData['validity'] == "A": # If the sentence shows that there's a fix, then we can log the line
             if firstFixFlag is False: # If we haven't found a fix before, then set the filename prefix with GPS date & time.
-                firstFixDate = gpsData['fix_date'] + "-" gpsData['fix_time']
+                firstFixDate = gpsData['fix_date'] + "-" + gpsData['fix_time']
                 firstFixFlag = True
             else: # write the data to a simple log file and then the raw data as well:
                 with open("/home/pi/gps_experimentation/" + firstFixDate +"-simple-log.txt", "a") as myfile:
